@@ -13,6 +13,7 @@ import Discussions from './Discussions'
 import DocumentsHub from './DocumentsHub'
 import HoursLog from './HoursLog'
 import Timeline from './Timeline'
+import BulletinBoard from './BulletinBoard'
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: '🏠' },
@@ -128,6 +129,11 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-400 mt-1 font-medium">{s.label}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Bulletin Board */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+                <BulletinBoard compact />
               </div>
 
               {/* Onboarding Checklist */}
