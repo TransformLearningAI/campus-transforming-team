@@ -12,9 +12,11 @@ import CalendarView from './CalendarView'
 import Discussions from './Discussions'
 import DocumentsHub from './DocumentsHub'
 import HoursLog from './HoursLog'
+import Timeline from './Timeline'
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: '🏠' },
+  { id: 'timeline', label: 'Timeline', icon: '🗓️' },
   { id: 'tasks', label: 'Tasks', icon: '📋' },
   { id: 'team', label: 'Team', icon: '👥' },
   { id: 'calendar', label: 'Calendar', icon: '📅' },
@@ -176,6 +178,7 @@ export default function Dashboard() {
             </div>
           )}
 
+          {tab === 'timeline' && <Timeline />}
           {tab === 'tasks' && <TaskBoard />}
           {tab === 'team' && <TeamDirectory />}
           {tab === 'calendar' && <CalendarView />}
