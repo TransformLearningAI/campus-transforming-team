@@ -142,8 +142,12 @@ export default function Dashboard() {
                   <h2 className="font-bold text-sm mb-4" style={{ color: '#0C1F3F' }}>Getting Started Checklist</h2>
                   <div className="space-y-3">
                     {ONBOARDING_STEPS.map(step => (
-                      <div key={step.id} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5" />
+                      <div key={step.id} className="flex items-start gap-3 group">
+                        <div className="relative w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5 cursor-pointer hover:border-[#00A8A8] hover:bg-[#00A8A8]/10 transition-colors">
+                          <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#00A8A8] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Hi {user.name.split(' ')[0]}!
+                          </span>
+                        </div>
                         <div>
                           <p className="text-sm text-gray-700">{step.label}</p>
                           {step.url && (
