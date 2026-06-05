@@ -32,6 +32,20 @@ export default function Dashboard() {
   const [tab, setTab] = useState('dashboard')
   const [stats, setStats] = useState({ members: 0, tasks: 0, hours: 0 })
   const [activity, setActivity] = useState([])
+  const [checkedSteps, setCheckedSteps] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { return JSON.parse(localStorage.getItem('onboarding_checked') || '[]') } catch { return [] }
+    }
+    return []
+  })
+
+  function toggleStep(stepId) {
+    setCheckedSteps(prev => {
+      const next = prev.includes(stepId) ? prev.filter(s => s !== stepId) : [...prev, stepId]
+      localStorage.setItem('onboarding_checked', JSON.stringify(next))
+      return next
+    })
+  }
 
   useEffect(() => {
     loadStats()
@@ -141,15 +155,23 @@ export default function Dashboard() {
                 <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
                   <h2 className="font-bold text-sm mb-4" style={{ color: '#0C1F3F' }}>Getting Started Checklist</h2>
                   <div className="space-y-3">
-                    {ONBOARDING_STEPS.map(step => (
+                    {ONBOARDING_STEPS.map(step => {
+                      const done = checkedSteps.includes(step.id)
+                      return (
                       <div key={step.id} className="flex items-start gap-3 group">
-                        <div className="relative w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5 cursor-pointer hover:border-[#00A8A8] hover:bg-[#00A8A8]/10 transition-colors">
-                          <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#00A8A8] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            Hi {user.name.split(' ')[0]}!
-                          </span>
-                        </div>
+                        <button onClick={() => toggleStep(step.id)}
+                                className={`relative w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 cursor-pointer transition-all flex items-center justify-center ${
+                                  done ? 'bg-[#00A8A8] border-[#00A8A8]' : 'border-gray-300 hover:border-[#00A8A8] hover:bg-[#00A8A8]/10'
+                                }`}>
+                          {done && <span className="text-white text-[10px] font-bold leading-none">&#10003;</span>}
+                          {!done && (
+                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#00A8A8] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              Hi {user.name.split(' ')[0]}!
+                            </span>
+                          )}
+                        </button>
                         <div>
-                          <p className="text-sm text-gray-700">{step.label}</p>
+                          <p className={`text-sm ${done ? 'line-through text-gray-400' : 'text-gray-700'}`}>{step.label}</p>
                           {step.url && (
                             <a href={step.url} target="_blank" rel="noopener noreferrer"
                                className="text-xs font-medium" style={{ color: '#00A8A8' }}>
@@ -158,7 +180,8 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
