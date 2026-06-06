@@ -9,6 +9,7 @@ export default function AuthScreen() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -17,16 +18,19 @@ export default function AuthScreen() {
     setError('')
     setLoading(true)
 
-    const result = mode === 'login'
-      ? await login(email, password)
-      : await register(name, email, password)
+    const result = mode === 'login' ? await login(email, password) : await register(name, email, password, inviteCode)
 
     if (result.error) setError(result.error)
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #0C1F3F 0%, #1a3a6b 100%)' }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        background: 'linear-gradient(135deg, #0C1F3F 0%, #1a3a6b 100%)',
+      }}
+    >
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -43,27 +47,61 @@ export default function AuthScreen() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-xl">
           {mode === 'register' && (
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Full Name</label>
-              <input type="text" required value={name} onChange={e => setName(e.target.value)}
-                     placeholder="Your full name"
-                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]" />
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+              />
             </div>
           )}
 
           <div className="mb-4">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Email</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                   placeholder="you@example.com"
-                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]" />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+            />
           </div>
 
           <div className="mb-6">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
-            <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                   placeholder="Choose a password"
-                   minLength={4}
-                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]" />
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Choose a password"
+              minLength={4}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+            />
           </div>
+
+          {mode === 'register' && (
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Team Invite Code
+              </label>
+              <input
+                type="text"
+                value={inviteCode}
+                onChange={e => setInviteCode(e.target.value)}
+                placeholder="Ask your team lead for the code"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+              />
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
@@ -71,9 +109,12 @@ export default function AuthScreen() {
             </div>
           )}
 
-          <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-white font-bold text-sm disabled:opacity-50"
-                  style={{ background: '#00A8A8' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl text-white font-bold text-sm disabled:opacity-50"
+            style={{ background: '#00A8A8' }}
+          >
             {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
 
@@ -81,16 +122,30 @@ export default function AuthScreen() {
             {mode === 'login' ? (
               <p className="text-sm text-gray-500">
                 New to the team?{' '}
-                <button type="button" onClick={() => { setMode('register'); setError('') }}
-                        className="font-semibold" style={{ color: '#00A8A8' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('register')
+                    setError('')
+                  }}
+                  className="font-semibold"
+                  style={{ color: '#00A8A8' }}
+                >
                   Register here
                 </button>
               </p>
             ) : (
               <p className="text-sm text-gray-500">
                 Already have an account?{' '}
-                <button type="button" onClick={() => { setMode('login'); setError('') }}
-                        className="font-semibold" style={{ color: '#00A8A8' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login')
+                    setError('')
+                  }}
+                  className="font-semibold"
+                  style={{ color: '#00A8A8' }}
+                >
                   Sign in
                 </button>
               </p>
