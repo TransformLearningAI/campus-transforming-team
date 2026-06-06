@@ -5,9 +5,22 @@ import { hashPassword } from '@/lib/password'
 export const runtime = 'nodejs'
 
 export async function POST(request) {
-  const { name, email, password } = await request.json()
+  const { name, email, password, inviteCode } = await request.json()
   if (!name || !email || !password) {
     return NextResponse.json({ error: 'Name, email, and password are required.' }, { status: 400 })
+  }
+
+  // Gate registration behind a shared team invite code. If TEAM_INVITE_CODE is
+  // unset, registration stays open (so deploys don't break) — set it in the
+  // Vercel env to close the portal to outsiders.
+  const required = process.env.TEAM_INVITE_CODE
+  if (required && (inviteCode || '').trim() !== required) {
+    return NextResponse.json(
+      {
+        error: 'Invalid invite code. Ask your team lead for the current code.',
+      },
+      { status: 403 },
+    )
   }
 
   const supabase = getServiceClient()

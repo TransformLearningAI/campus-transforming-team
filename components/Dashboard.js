@@ -29,9 +29,13 @@ const TABS = [
   { id: 'profile', label: 'Profile', icon: '👤' },
 ]
 
+// Mobile bottom bar shows these four; everything else lives behind "More".
+const PRIMARY_TAB_IDS = ['dashboard', 'timeline', 'tasks', 'team']
+
 export default function Dashboard() {
   const { user, logout } = useAuth()
   const [tab, setTab] = useState('dashboard')
+  const [moreOpen, setMoreOpen] = useState(false)
   const [stats, setStats] = useState({ members: 0, tasks: 0, hours: 0 })
   const [activity, setActivity] = useState([])
   const [checkedSteps, setCheckedSteps] = useState(() => {
@@ -138,19 +142,60 @@ export default function Dashboard() {
         </nav>
 
         {/* Mobile Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex overflow-x-auto">
-          {TABS.map(t => (
+        <div className="md:hidden">
+          {/* "More" sheet */}
+          {moreOpen && (
+            <>
+              <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setMoreOpen(false)} />
+              <div className="fixed bottom-16 left-0 right-0 z-50 bg-white border-t border-gray-200 rounded-t-2xl p-4 shadow-xl">
+                <div className="grid grid-cols-4 gap-2">
+                  {TABS.filter(t => !PRIMARY_TAB_IDS.includes(t.id)).map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setTab(t.id)
+                        setMoreOpen(false)
+                      }}
+                      className={`py-3 flex flex-col items-center gap-1 rounded-xl text-[11px] font-medium ${
+                        tab === t.id ? 'bg-[#0C1F3F] text-white' : 'text-gray-500 hover:bg-gray-100'
+                      }`}
+                    >
+                      <span className="text-xl">{t.icon}</span>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Bottom bar: 4 primary tabs + More */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex">
+            {TABS.filter(t => PRIMARY_TAB_IDS.includes(t.id)).map(t => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setTab(t.id)
+                  setMoreOpen(false)
+                }}
+                className={`flex-1 min-w-0 py-3 flex flex-col items-center gap-0.5 text-[10px] font-medium ${
+                  tab === t.id ? 'text-[#00A8A8]' : 'text-gray-400'
+                }`}
+              >
+                <span className="text-lg">{t.icon}</span>
+                {t.label}
+              </button>
+            ))}
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => setMoreOpen(o => !o)}
               className={`flex-1 min-w-0 py-3 flex flex-col items-center gap-0.5 text-[10px] font-medium ${
-                tab === t.id ? 'text-[#00A8A8]' : 'text-gray-400'
+                moreOpen || !PRIMARY_TAB_IDS.includes(tab) ? 'text-[#00A8A8]' : 'text-gray-400'
               }`}
             >
-              <span className="text-lg">{t.icon}</span>
-              {t.label}
+              <span className="text-lg">☰</span>
+              More
             </button>
-          ))}
+          </div>
         </div>
 
         {/* Main Content */}
