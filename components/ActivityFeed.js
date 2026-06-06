@@ -13,6 +13,11 @@ export default function ActivityFeed({ activities }) {
     logged_hours: '⏱️',
     posted_discussion: '💬',
     posted_reply: '💬',
+    added_timeline: '🗓️',
+    posted_bulletin: '📢',
+    created_event: '📅',
+    created_doc: '📁',
+    posted_suggestion: '✏️',
   }
 
   return (
@@ -23,7 +28,12 @@ export default function ActivityFeed({ activities }) {
           <div className="flex-1">
             <p className="text-sm text-gray-700">{a.detail || a.action}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">
-              {new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              {new Date(a.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
             </p>
           </div>
         </div>
