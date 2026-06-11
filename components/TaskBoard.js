@@ -1,15 +1,348 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { TASK_CATEGORIES } from '@/lib/constants'
+
+function ProgressBar({ value }) {
+  const color = value === 100 ? '#16A34A' : value >= 50 ? '#00A8A8' : '#D97706'
+  return (
+    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-300"
+        style={{ width: `${value}%`, background: color }}
+      />
+    </div>
+  )
+}
+
+function TimeAgo({ date }) {
+  const d = new Date(date)
+  const now = new Date()
+  const diff = Math.floor((now - d) / 1000)
+  if (diff < 60) return <span>just now</span>
+  if (diff < 3600) return <span>{Math.floor(diff / 60)}m ago</span>
+  if (diff < 86400) return <span>{Math.floor(diff / 3600)}h ago</span>
+  if (diff < 604800) return <span>{Math.floor(diff / 86400)}d ago</span>
+  return <span>{d.toLocaleDateString()}</span>
+}
+
+function TaskDetail({ task, user, onClose, onUpdate }) {
+  const [comments, setComments] = useState([])
+  const [newComment, setNewComment] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [progress, setProgress] = useState(task.progress || 0)
+  const [deliverableUrl, setDeliverableUrl] = useState(task.deliverable_url || '')
+  const [savingProgress, setSavingProgress] = useState(false)
+  const [showDesc, setShowDesc] = useState(true)
+  const commentsEnd = useRef(null)
+  const isOwner = task.claimed_by === user.id
+
+  useEffect(() => {
+    loadComments()
+  }, [task.id])
+
+  useEffect(() => {
+    commentsEnd.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [comments.length])
+
+  async function loadComments() {
+    const { data } = await supabase
+      .from('team_task_comments')
+      .select('*')
+      .eq('task_id', task.id)
+      .order('created_at', { ascending: true })
+    setComments(data || [])
+  }
+
+  async function postComment(e) {
+    e.preventDefault()
+    if (!newComment.trim()) return
+    setPosting(true)
+    await supabase.from('team_task_comments').insert({
+      task_id: task.id,
+      member_id: user.id,
+      member_name: user.name,
+      content: newComment.trim(),
+    })
+    await supabase.from('team_activity').insert({
+      member_id: user.id,
+      member_name: user.name,
+      action: 'commented_task',
+      detail: `Commented on: ${task.title}`,
+    })
+    setNewComment('')
+    setPosting(false)
+    loadComments()
+  }
+
+  async function saveProgress() {
+    setSavingProgress(true)
+    const updates = { progress, deliverable_url: deliverableUrl || null }
+    if (progress === 100) {
+      updates.status = 'completed'
+      updates.completed_at = new Date().toISOString()
+    }
+    await supabase.from('team_tasks').update(updates).eq('id', task.id)
+    if (progress === 100) {
+      await supabase.from('team_activity').insert({
+        member_id: user.id,
+        member_name: user.name,
+        action: 'completed_task',
+        detail: `Completed: ${task.title}`,
+      })
+    }
+    setSavingProgress(false)
+    onUpdate()
+  }
+
+  async function claimTask() {
+    await supabase
+      .from('team_tasks')
+      .update({
+        claimed_by: user.id,
+        claimed_at: new Date().toISOString(),
+        status: 'in_progress',
+      })
+      .eq('id', task.id)
+    await supabase.from('team_activity').insert({
+      member_id: user.id,
+      member_name: user.name,
+      action: 'claimed_task',
+      detail: `Claimed: ${task.title}`,
+    })
+    onUpdate()
+  }
+
+  const priorityColors = { high: '#DC2626', medium: '#D97706', low: '#16A34A' }
+  const statusColors = { open: '#3B82F6', in_progress: '#D97706', completed: '#16A34A' }
+  const statusLabels = { open: 'Open', in_progress: 'In Progress', completed: 'Completed' }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="fixed inset-y-0 right-0 w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="border-b border-gray-100 px-6 py-4 flex items-start justify-between gap-4 shrink-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
+                style={{ background: statusColors[task.status] || '#94A3B8' }}
+              >
+                {statusLabels[task.status] || task.status}
+              </span>
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+                style={{ color: priorityColors[task.priority], borderColor: priorityColors[task.priority] }}
+              >
+                {task.priority}
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium">{task.category}</span>
+            </div>
+            <h2 className="font-bold text-lg leading-snug" style={{ color: '#0C1F3F' }}>
+              {task.title}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 shrink-0 transition-colors"
+          >
+            <span className="text-lg leading-none">&times;</span>
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* Description */}
+          {task.description && (
+            <div>
+              <button
+                onClick={() => setShowDesc(d => !d)}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 mb-2"
+              >
+                <span className="transition-transform" style={{ transform: showDesc ? 'rotate(90deg)' : 'rotate(0deg)' }}>&#9654;</span>
+                Description
+              </button>
+              {showDesc && (
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{task.description}</p>
+              )}
+            </div>
+          )}
+
+          {/* Claimed by */}
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-gray-400 font-medium">Assigned to:</span>
+            {task.claimed && task.claimed.name ? (
+              <span className="font-medium" style={{ color: '#0C1F3F' }}>{task.claimed.name}</span>
+            ) : (
+              <span className="text-gray-300 italic">Unclaimed</span>
+            )}
+            {task.status === 'open' && (
+              <button
+                onClick={claimTask}
+                className="ml-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white"
+                style={{ background: '#00A8A8' }}
+              >
+                Claim This Task
+              </button>
+            )}
+          </div>
+
+          {/* Progress — only shown when task is claimed */}
+          {task.status !== 'open' && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Progress</span>
+                <span className="text-sm font-bold" style={{ color: '#0C1F3F' }}>{progress}%</span>
+              </div>
+              <ProgressBar value={progress} />
+              {isOwner && task.status !== 'completed' && (
+                <>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={progress}
+                    onChange={e => setProgress(Number(e.target.value))}
+                    className="w-full accent-[#00A8A8] cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-300 font-medium px-0.5">
+                    <span>Just started</span>
+                    <span>Halfway</span>
+                    <span>Almost done</span>
+                  </div>
+                </>
+              )}
+
+              {/* Deliverable URL */}
+              {isOwner && task.status !== 'completed' ? (
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                    Deliverable Link
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Paste a link to your work (Google Doc, spreadsheet, etc.)"
+                    value={deliverableUrl}
+                    onChange={e => setDeliverableUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+                  />
+                </div>
+              ) : task.deliverable_url ? (
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-1">Deliverable</span>
+                  <a
+                    href={task.deliverable_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium inline-flex items-center gap-1 hover:underline"
+                    style={{ color: '#00A8A8' }}
+                  >
+                    View Deliverable &rarr;
+                  </a>
+                </div>
+              ) : null}
+
+              {/* Save button */}
+              {isOwner && task.status !== 'completed' && (
+                <button
+                  onClick={saveProgress}
+                  disabled={savingProgress}
+                  className="w-full py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50 transition-colors"
+                  style={{ background: progress === 100 ? '#16A34A' : '#00A8A8' }}
+                >
+                  {savingProgress
+                    ? 'Saving...'
+                    : progress === 100
+                      ? 'Mark as Complete'
+                      : 'Save Progress'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Comments */}
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+              Discussion ({comments.length})
+            </h3>
+
+            {comments.length === 0 && (
+              <p className="text-sm text-gray-300 italic py-4 text-center">No comments yet. Start the conversation.</p>
+            )}
+
+            <div className="space-y-3">
+              {comments.map(c => {
+                const isMe = c.member_id === user.id
+                return (
+                  <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                      style={{ background: isMe ? '#00A8A8' : '#0C1F3F' }}
+                    >
+                      {c.member_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className={`max-w-[80%] ${isMe ? 'text-right' : ''}`}>
+                      <div
+                        className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                          isMe
+                            ? 'bg-[#00A8A8] text-white rounded-tr-md'
+                            : 'bg-gray-100 text-gray-700 rounded-tl-md'
+                        }`}
+                      >
+                        {c.content}
+                      </div>
+                      <div className={`flex items-center gap-2 mt-1 text-[10px] text-gray-300 ${isMe ? 'justify-end' : ''}`}>
+                        <span className="font-medium">{c.member_name}</span>
+                        <span>&middot;</span>
+                        <TimeAgo date={c.created_at} />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={commentsEnd} />
+            </div>
+          </div>
+        </div>
+
+        {/* Comment Input — pinned to bottom */}
+        <form onSubmit={postComment} className="border-t border-gray-100 px-6 py-4 shrink-0">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newComment}
+              onChange={e => setNewComment(e.target.value)}
+              placeholder="Write a comment..."
+              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#00A8A8]"
+            />
+            <button
+              type="submit"
+              disabled={posting || !newComment.trim()}
+              className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-30 transition-opacity"
+              style={{ background: '#00A8A8' }}
+            >
+              {posting ? '...' : 'Send'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
+  )
+}
 
 export default function TaskBoard() {
   const { user } = useAuth()
   const [tasks, setTasks] = useState([])
   const [filter, setFilter] = useState('all')
   const [showNew, setShowNew] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -19,6 +352,7 @@ export default function TaskBoard() {
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [showAllCats, setShowAllCats] = useState(false)
 
   useEffect(() => {
     loadTasks()
@@ -35,6 +369,11 @@ export default function TaskBoard() {
     else if (filter !== 'all') q = q.eq('category', filter)
     const { data } = await q
     setTasks(data || [])
+    // Refresh the selected task if it's open
+    if (selectedTask) {
+      const updated = (data || []).find(t => t.id === selectedTask.id)
+      if (updated) setSelectedTask(updated)
+    }
   }
 
   async function createTask(e) {
@@ -69,44 +408,9 @@ export default function TaskBoard() {
     loadTasks()
   }
 
-  async function claimTask(taskId) {
-    await supabase
-      .from('team_tasks')
-      .update({
-        claimed_by: user.id,
-        claimed_at: new Date().toISOString(),
-        status: 'in_progress',
-      })
-      .eq('id', taskId)
-    await supabase.from('team_activity').insert({
-      member_id: user.id,
-      member_name: user.name,
-      action: 'claimed_task',
-      detail: `Claimed a task`,
-    })
-    loadTasks()
-  }
-
-  async function completeTask(taskId) {
-    await supabase
-      .from('team_tasks')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', taskId)
-    await supabase.from('team_activity').insert({
-      member_id: user.id,
-      member_name: user.name,
-      action: 'completed_task',
-      detail: `Completed a task`,
-    })
-    loadTasks()
-  }
-
   const priorityColors = { high: '#DC2626', medium: '#D97706', low: '#16A34A' }
-  const statusColors = {
-    open: '#3B82F6',
-    in_progress: '#D97706',
-    completed: '#16A34A',
-  }
+  const statusColors = { open: '#3B82F6', in_progress: '#D97706', completed: '#16A34A' }
+  const visibleCats = showAllCats ? TASK_CATEGORIES : TASK_CATEGORIES.slice(0, 8)
 
   return (
     <div>
@@ -138,7 +442,7 @@ export default function TaskBoard() {
           </button>
         ))}
         <span className="text-gray-300 mx-1">|</span>
-        {TASK_CATEGORIES.slice(0, 8).map(cat => (
+        {visibleCats.map(cat => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}
@@ -147,6 +451,14 @@ export default function TaskBoard() {
             {cat}
           </button>
         ))}
+        {TASK_CATEGORIES.length > 8 && (
+          <button
+            onClick={() => setShowAllCats(s => !s)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-600"
+          >
+            {showAllCats ? 'Show less' : `+${TASK_CATEGORIES.length - 8} more`}
+          </button>
+        )}
       </div>
 
       {/* New Task Form */}
@@ -220,24 +532,23 @@ export default function TaskBoard() {
       <div className="space-y-3">
         {tasks.length === 0 && <p className="text-sm text-gray-400 italic py-8 text-center">No tasks found.</p>}
         {tasks.map(task => (
-          <div key={task.id} className="bg-white rounded-xl border border-gray-200 p-5">
+          <button
+            key={task.id}
+            onClick={() => setSelectedTask(task)}
+            className="w-full text-left bg-white rounded-xl border border-gray-200 p-5 hover:border-[#00A8A8]/40 hover:shadow-sm transition-all"
+          >
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white"
-                    style={{
-                      background: statusColors[task.status] || '#94A3B8',
-                    }}
+                    style={{ background: statusColors[task.status] || '#94A3B8' }}
                   >
                     {task.status.replace('_', ' ')}
                   </span>
                   <span
                     className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
-                    style={{
-                      color: priorityColors[task.priority],
-                      borderColor: priorityColors[task.priority],
-                    }}
+                    style={{ color: priorityColors[task.priority], borderColor: priorityColors[task.priority] }}
                   >
                     {task.priority}
                   </span>
@@ -246,36 +557,38 @@ export default function TaskBoard() {
                 <h3 className="font-bold text-sm" style={{ color: '#0C1F3F' }}>
                   {task.title}
                 </h3>
-                {task.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>}
-                {task.claimed && task.claimed.name && (
-                  <p className="text-xs mt-2" style={{ color: '#00A8A8' }}>
-                    Claimed by {task.claimed.name}
-                  </p>
+                {task.description && (
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
                 )}
+                <div className="flex items-center gap-3 mt-2">
+                  {task.claimed && task.claimed.name && (
+                    <span className="text-xs" style={{ color: '#00A8A8' }}>
+                      {task.claimed.name}
+                    </span>
+                  )}
+                  {task.progress > 0 && (
+                    <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+                      <ProgressBar value={task.progress} />
+                      <span className="text-[10px] text-gray-400 font-bold">{task.progress}%</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-2 shrink-0">
-                {task.status === 'open' && (
-                  <button
-                    onClick={() => claimTask(task.id)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-                    style={{ background: '#00A8A8' }}
-                  >
-                    Claim
-                  </button>
-                )}
-                {task.status === 'in_progress' && task.claimed_by === user.id && (
-                  <button
-                    onClick={() => completeTask(task.id)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-green-600"
-                  >
-                    Done
-                  </button>
-                )}
-              </div>
+              <span className="text-gray-300 text-sm shrink-0">&rsaquo;</span>
             </div>
-          </div>
+          </button>
         ))}
       </div>
+
+      {/* Task Detail Slide-over */}
+      {selectedTask && (
+        <TaskDetail
+          task={selectedTask}
+          user={user}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={loadTasks}
+        />
+      )}
     </div>
   )
 }
