@@ -15,6 +15,7 @@ import HoursLog from './HoursLog'
 import Timeline from './Timeline'
 import BulletinBoard from './BulletinBoard'
 import SuggestEdit from './SuggestEdit'
+import NewsTicker from './NewsTicker'
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: '🏠' },
@@ -121,6 +122,8 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      <NewsTicker />
 
       <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
         {/* Sidebar Nav */}
