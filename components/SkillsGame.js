@@ -11,6 +11,8 @@ const MODES = [
   { id: 'said', title: "What's Really Being Said?", icon: '👂', desc: 'Read between the lines. Spot what\'s underneath.', color: '#0891B2' },
   { id: 'missing', title: "What's Missing?", icon: '🔍', desc: 'The profile looks complete. It isn\'t. Find the gaps.', color: '#D97706' },
   { id: 'board', title: 'The Board Meeting', icon: '🪑', desc: 'You\'re in the room. Every word matters.', color: '#DC2626' },
+  { id: 'build', title: 'Build the Model', icon: '🏗️', desc: 'Pick 5 revenue streams for a real campus. Some work. Some don\'t. Context is everything.', color: '#059669' },
+  { id: 'partners', title: 'The Community Map', icon: '🗺️', desc: 'Match partners to buildings. Build something the community actually needs.', color: '#EC4899' },
 ]
 
 // ── MODE 1: WHO DO YOU TALK TO FIRST ──────────────────────────
@@ -614,6 +616,370 @@ function BoardMode() {
   )
 }
 
+// ── MODE 5: BUILD THE MODEL ───────────────────────────────────
+
+const BUILD_CAMPUS = {
+  name: 'Millbrook College',
+  town: 'Millbrook, PA — population 11,000. Former steel region. Nearest city 45 min. Community college 35 min away.',
+  campus: '32 acres. Science building, arts building, gym, 2 dorms (capacity 280), dining hall, library, chapel, welcome center. Nursing program is the strongest. Small education program. Liberal arts core.',
+  context: 'Enrollment 520, down from 950 in 2018. Deficit $2.8M. Endowment $9M. Bond debt $8M. 26 faculty. The nearest hospital is 8 miles away and desperate for trained workers. A logistics warehouse opened 12 miles out last year — 400 jobs, can\'t fill them. The school district has no after-school STEM program. The town lost its only gym when the YMCA closed in 2022. Three food truck operators want a commercial kitchen. The county has WIOA workforce funding available.',
+}
+
+const BUILD_OPTIONS = [
+  { id: 'workforce_health', name: 'Healthcare Workforce Training', icon: '🏥', cost: 'Medium',
+    desc: 'CNA, phlebotomy, medical coding, community health worker certifications. Partner with the hospital.',
+    fit: 5, revenue: 4, community: 5, sustainability: 5,
+    feedback: 'Perfect fit. The hospital is 8 miles away and desperate. You have a nursing program and science labs. WIOA funding can cover startup. This should be your anchor revenue stream — it solves a real community problem and has a paying customer from day one.' },
+  { id: 'workforce_logistics', name: 'Logistics & Warehouse Training', icon: '📦', cost: 'Low',
+    desc: 'Forklift certification, supply chain basics, safety training. Partner with the warehouse.',
+    fit: 4, revenue: 3, community: 3, sustainability: 4,
+    feedback: 'Good fit. The warehouse has 400 jobs and can\'t fill them. Training is short-cycle and the employer may pay directly. Low cost to launch — you just need classroom space and a forklift simulator. Not glamorous, but it\'s immediate revenue and community goodwill.' },
+  { id: 'afterschool', name: 'K-12 After-School STEM & Tutoring', icon: '🔬', cost: 'Low',
+    desc: 'After-school programs in the science building and computer lab. Partner with school district.',
+    fit: 5, revenue: 2, community: 5, sustainability: 3,
+    feedback: 'Strong community play, modest revenue. The school district needs this and your science building is sitting empty after 3pm. Revenue comes from district contracts and grants, not tuition. The real value is political — parents who use your campus for their kids become advocates for your survival.' },
+  { id: 'wellness', name: 'Community Wellness Center', icon: '💪', cost: 'Low',
+    desc: 'Open the gym to the public. Fitness classes, senior programming, youth sports. Membership model.',
+    fit: 5, revenue: 2, community: 5, sustainability: 4,
+    feedback: 'The YMCA closed in 2022. The town has no gym. Opening yours to the public is the fastest way to make the campus feel like it belongs to the community again. Revenue is modest — memberships, class fees — but the loyalty it builds is enormous. People fight for institutions they use.' },
+  { id: 'conference', name: 'Conference & Event Center', icon: '🎪', cost: 'Medium',
+    desc: 'Corporate retreats, weddings, community events. Use the dining hall, chapel, dorms for housing.',
+    fit: 2, revenue: 2, community: 2, sustainability: 2,
+    feedback: 'Careful. Millbrook is 45 minutes from the nearest city, population 11,000. Who\'s coming to a conference here? Weddings are seasonal. Corporate retreats need amenities you don\'t have. This works in a college town near a metro area. In rural PA, it\'s a revenue stream on paper that rarely materializes at scale.' },
+  { id: 'food_incubator', name: 'Commercial Kitchen & Food Incubator', icon: '🍳', cost: 'Medium',
+    desc: 'Convert the dining hall kitchen into a shared commercial kitchen. Partner with local food entrepreneurs.',
+    fit: 4, revenue: 2, community: 4, sustainability: 3,
+    feedback: 'Three food truck operators want a commercial kitchen. The dining hall kitchen is already there. This isn\'t a huge revenue driver — but it\'s a visible, tangible sign that the campus is serving the community in new ways. It also creates a pipeline for small business development programming.' },
+  { id: 'tech_hub', name: 'AI & Technology Innovation Hub', icon: '💻', cost: 'High',
+    desc: 'Co-working space, startup incubation, AI training workshops. Attract tech entrepreneurs.',
+    fit: 1, revenue: 1, community: 1, sustainability: 1,
+    feedback: 'Be honest with yourself. Millbrook is a former steel town of 11,000 people, 45 minutes from the nearest city. Where are the tech entrepreneurs coming from? The WiFi barely works in the dorms. An "innovation hub" sounds exciting on a slide deck, but without a tech ecosystem to draw from, it\'s an empty room with good branding. Don\'t build for the community you wish you had.' },
+  { id: 'housing', name: 'Workforce & Transitional Housing', icon: '🏠', cost: 'Low',
+    desc: 'Convert underused dorm rooms into workforce housing for trainees or transitional housing partnerships.',
+    fit: 4, revenue: 3, community: 4, sustainability: 4,
+    feedback: 'You have 280 beds at 40% occupancy. That\'s 170 empty beds. Workers coming for healthcare or logistics training need somewhere to stay. The county housing authority is looking for transitional housing partners. This turns a cost center (empty dorms you\'re heating anyway) into revenue. Smart, practical, immediate.' },
+  { id: 'arts_residency', name: 'Artist Residency & Community Arts', icon: '🎨', cost: 'Low',
+    desc: 'Use the arts building for artist residencies, community theater, music lessons, gallery shows.',
+    fit: 3, revenue: 1, community: 4, sustainability: 2,
+    feedback: 'The arts building has a 320-seat theater and studios. An artist residency brings life to campus and creates cultural programming the town doesn\'t have. Revenue is minimal — residency fees, ticket sales, workshop fees. But culture builds identity, and identity builds loyalty. Don\'t make this an anchor — make it a complement.' },
+  { id: 'elder_care', name: 'Senior Services & Elder Care Training', icon: '👴', cost: 'Medium',
+    desc: 'Adult day programs, caregiver training, senior fitness, intergenerational programming.',
+    fit: 4, revenue: 3, community: 5, sustainability: 4,
+    feedback: 'The population is aging. There\'s no adult day program in the county. Caregiver training ties directly to your healthcare workforce pipeline. Senior fitness uses the gym. Intergenerational programming — seniors and K-12 students on the same campus — is the kind of thing that makes people cry at board meetings and write checks. This builds something beautiful.' },
+  { id: 'degree_online', name: 'Double Down on Online Degree Programs', icon: '🖥️', cost: 'High',
+    desc: 'Invest heavily in online bachelor\'s and master\'s degrees to reach students nationally.',
+    fit: 1, revenue: 1, community: 0, sustainability: 1,
+    feedback: 'You\'re a college with 520 students, a $2.8M deficit, and a brand nobody outside the county has heard of. You\'re going to compete with Arizona State, Southern New Hampshire, and Western Governors in online education? They spend more on marketing in a week than your entire operating budget. This is how small colleges waste their last dollars — chasing a market they can never win.' },
+  { id: 'apprentice', name: 'Registered Apprenticeship Programs', icon: '🔧', cost: 'Medium',
+    desc: 'Partner with local employers and unions for earn-while-you-learn apprenticeships in trades, healthcare, and manufacturing.',
+    fit: 5, revenue: 4, community: 5, sustainability: 5,
+    feedback: 'This is the model. Employers pay. Workers earn while they learn. The campus provides classroom space and coordination. Federal apprenticeship funding is available. The hospital, the warehouse, and the manufacturing cluster 15 miles away are all potential partners. This isn\'t just a program — it\'s the philosophical heart of campus transformation: education connected to real work, real wages, and real community needs.' },
+]
+
+function BuildMode() {
+  const [selected, setSelected] = useState([])
+  const [revealed, setRevealed] = useState(false)
+
+  function toggle(id) {
+    if (revealed) return
+    if (selected.includes(id)) setSelected(selected.filter(s => s !== id))
+    else if (selected.length < 5) setSelected([...selected, id])
+  }
+
+  const selectedItems = selected.map(id => BUILD_OPTIONS.find(o => o.id === id))
+  const totalFit = selectedItems.reduce((s, i) => s + (i?.fit || 0), 0)
+  const totalRev = selectedItems.reduce((s, i) => s + (i?.revenue || 0), 0)
+  const totalComm = selectedItems.reduce((s, i) => s + (i?.community || 0), 0)
+  const totalSust = selectedItems.reduce((s, i) => s + (i?.sustainability || 0), 0)
+  const totalScore = totalFit + totalRev + totalComm + totalSust
+  const maxScore = 5 * 20 // 5 picks * max 20 per pick
+
+  return (
+    <div>
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 text-white">
+        <p className="text-xs font-bold uppercase tracking-wider text-green-400 mb-2">{BUILD_CAMPUS.name}</p>
+        <p className="text-sm text-gray-400 mb-2">{BUILD_CAMPUS.town}</p>
+        <p className="text-sm text-gray-300 leading-relaxed mb-3">{BUILD_CAMPUS.campus}</p>
+        <div className="border-t border-gray-700 pt-3">
+          <p className="text-xs text-gray-500 mb-1">Context</p>
+          <p className="text-sm text-gray-300 leading-relaxed">{BUILD_CAMPUS.context}</p>
+        </div>
+      </div>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Pick 5 revenue streams for this campus.</p>
+      <p className="text-sm text-gray-500 mb-4">Some are obvious wins. Some are traps. Context is everything — what works in Boston doesn't work in Millbrook.</p>
+
+      <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        {BUILD_OPTIONS.map(opt => {
+          const isSelected = selected.includes(opt.id)
+          const order = selected.indexOf(opt.id)
+          return (
+            <button
+              key={opt.id}
+              onClick={() => toggle(opt.id)}
+              className={`text-left p-4 rounded-xl border-2 transition-all relative ${
+                revealed
+                  ? isSelected
+                    ? opt.fit >= 4 ? 'border-green-400 bg-green-50' : opt.fit >= 2 ? 'border-yellow-300 bg-yellow-50' : 'border-red-300 bg-red-50'
+                    : 'border-gray-100 bg-gray-50 opacity-40'
+                  : isSelected
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 bg-white hover:border-green-300 cursor-pointer'
+              }`}
+            >
+              {isSelected && !revealed && (
+                <span className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-green-600 text-white text-xs font-bold flex items-center justify-center">
+                  {order + 1}
+                </span>
+              )}
+              <div className="flex items-start gap-3">
+                <span className="text-xl">{opt.icon}</span>
+                <div className="flex-1">
+                  <p className="font-bold text-sm" style={{ color: '#0C1F3F' }}>{opt.name}</p>
+                  <p className="text-[10px] text-gray-400 mb-1">Startup cost: {opt.cost}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">{opt.desc}</p>
+                </div>
+              </div>
+              {revealed && isSelected && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="grid grid-cols-4 gap-2 mb-2">
+                    {[['Fit', opt.fit], ['Revenue', opt.revenue], ['Community', opt.community], ['Sustain', opt.sustainability]].map(([label, val]) => (
+                      <div key={label} className="text-center">
+                        <p className="text-[9px] text-gray-400 uppercase">{label}</p>
+                        <p className={`text-sm font-bold ${val >= 4 ? 'text-green-600' : val >= 2 ? 'text-yellow-600' : 'text-red-500'}`}>{val}/5</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">{opt.feedback}</p>
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {selected.length === 5 && !revealed && (
+        <button onClick={() => setRevealed(true)}
+                className="w-full py-3 rounded-xl text-white font-bold text-sm"
+                style={{ background: '#059669' }}>
+          Lock In My 5 — Score My Model
+        </button>
+      )}
+
+      {revealed && (
+        <div className="bg-gray-900 rounded-2xl p-6 text-white">
+          <p className="text-xs font-bold uppercase tracking-wider text-green-400 mb-3">Your Transformation Model</p>
+          <div className="grid grid-cols-4 gap-4 mb-4 text-center">
+            {[['Campus Fit', totalFit, 25], ['Revenue Potential', totalRev, 25], ['Community Impact', totalComm, 25], ['Sustainability', totalSust, 25]].map(([label, val, max]) => (
+              <div key={label}>
+                <p className="text-2xl font-light" style={{ color: val / max > 0.7 ? '#00A8A8' : val / max > 0.4 ? '#D97706' : '#DC2626' }}>{val}/{max}</p>
+                <p className="text-[10px] text-gray-500 uppercase">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mb-4">
+            <p className="text-3xl font-light" style={{ color: totalScore / maxScore > 0.7 ? '#00A8A8' : totalScore / maxScore > 0.4 ? '#D97706' : '#DC2626' }}>
+              {totalScore}/{maxScore}
+            </p>
+            <p className="text-xs text-gray-500">Overall Model Score</p>
+          </div>
+          <p className="text-sm text-gray-400 leading-relaxed mb-4 text-center max-w-lg mx-auto">
+            {totalScore >= 80
+              ? 'Strong model. You built around real community needs, real paying customers, and real campus assets. This is a transformation plan a board could believe in and a funder could support.'
+              : totalScore >= 55
+                ? 'Decent foundation, but some of your picks don\'t fit this community. Review the feedback — the best revenue streams are the ones where someone is already asking for what you\'re offering.'
+                : 'This model has some serious mismatches. You may be building for the community you want rather than the one that\'s actually there. The key question is always: who pays, and why do they need what you\'re offering?'}
+          </p>
+          <p className="text-xs text-gray-600 leading-relaxed text-center max-w-md mx-auto mb-4">
+            The best transformation models share three traits: they solve problems the community already has, they have paying customers from day one, and they use campus assets that are already there. Scroll up and read the feedback on each choice.
+          </p>
+          <div className="text-center">
+            <button onClick={() => { setSelected([]); setRevealed(false) }}
+                    className="px-4 py-2 rounded-lg text-sm font-bold bg-green-600 text-white">
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selected.length < 5 && !revealed && (
+        <p className="text-center text-sm text-gray-400">
+          Select {5 - selected.length} more revenue {5 - selected.length === 1 ? 'stream' : 'streams'}. Think about what this specific community needs — not what sounds good on a slide.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── MODE 6: THE COMMUNITY MAP ─────────────────────────────────
+
+const MAP_BUILDINGS = [
+  { id: 'science', name: 'Science Building', desc: 'Bio & chem labs, greenhouse, 4 classrooms', icon: '🔬' },
+  { id: 'arts', name: 'Arts Building', desc: '320-seat theater, studios, music rooms', icon: '🎭' },
+  { id: 'gym', name: 'Gymnasium', desc: 'Basketball court, fitness center, locker rooms', icon: '🏀' },
+  { id: 'dining', name: 'Dining Hall', desc: 'Seats 300, commercial kitchen, loading dock', icon: '🍽️' },
+  { id: 'dorms', name: 'Residence Hall A', desc: '140 beds, common rooms, laundry, at 35% occupancy', icon: '🏠' },
+  { id: 'library', name: 'Library', desc: '45,000 volumes, computer lab, study rooms, meeting spaces', icon: '📚' },
+]
+
+const MAP_PARTNERS = [
+  { id: 'hospital', name: 'Regional Hospital', icon: '🏥', desc: 'Needs 60 CNAs, 15 phlebotomists, and community health workers. Will pay for training.',
+    bestBuilding: 'science', why: 'The bio and chem labs are perfect for clinical skills training. The greenhouse could support a health and nutrition program. The hospital becomes your anchor tenant — steady revenue, community credibility, and a pipeline to jobs.' },
+  { id: 'school', name: 'School District', icon: '🏫', desc: 'Wants after-school STEM, summer camps, and teacher professional development. Has grant funding.',
+    bestBuilding: 'library', why: 'The library has computer labs, study rooms, and meeting spaces — exactly what after-school programs need. It\'s also a natural fit for teacher PD workshops. The school district brings kids onto your campus, which brings parents, which builds community loyalty.' },
+  { id: 'county', name: 'County Workforce Board', icon: '🏛️', desc: 'Has $400K in WIOA funding for workforce training. Looking for a facility and a partner to run programs.',
+    bestBuilding: 'dining', why: 'Wait — the dining hall? Yes. The dining hall seats 300, has a commercial kitchen, and has the loading dock and space for equipment. Workforce orientation sessions, job fairs, large-group training, and community meals all happen here. The kitchen becomes a culinary training site. The WIOA money funds programs that fill the rest of the campus.' },
+  { id: 'seniors', name: 'Area Agency on Aging', icon: '👴', desc: 'Needs space for senior fitness, social programming, and caregiver support groups. Some grant funding available.',
+    bestBuilding: 'gym', why: 'The YMCA closed. The gym is the only fitness facility in town. Senior fitness classes in the morning, youth sports in the afternoon, community events in the evening. The Agency on Aging brings grant funding and a population that will use the campus 5 days a week. This is how a gym becomes a community anchor.' },
+  { id: 'artists', name: 'Regional Arts Council', icon: '🎨', desc: 'Looking for residency space, gallery shows, community theater. Small budget but high visibility.',
+    bestBuilding: 'arts', why: 'The 320-seat theater, the studios, the music rooms — the arts council activates all of it. Revenue is modest but visibility is high. Community theater brings 300 people to campus on a Saturday night. Gallery openings bring donors. Music lessons bring families. The arts don\'t pay the bills — they fill the soul.' },
+  { id: 'housing', name: 'County Housing Authority', icon: '🔑', desc: 'Needs transitional housing for workforce trainees and people in job training programs. Will pay per bed.',
+    bestBuilding: 'dorms', why: 'You have 140 beds at 35% occupancy — that\'s 90 empty beds you\'re heating anyway. The housing authority pays per bed per night. Workers coming for healthcare or logistics training need somewhere to stay. This turns your biggest cost center into revenue overnight. Practical, immediate, zero construction needed.' },
+]
+
+function PartnersMode() {
+  const [assignments, setAssignments] = useState({})
+  const [revealed, setRevealed] = useState(false)
+  const [dragging, setDragging] = useState(null)
+
+  function assign(partnerId, buildingId) {
+    if (revealed) return
+    // Remove partner from any previous assignment
+    const next = { ...assignments }
+    Object.keys(next).forEach(k => { if (next[k] === partnerId) delete next[k] })
+    next[buildingId] = partnerId
+    setAssignments(next)
+  }
+
+  const assignedPartners = new Set(Object.values(assignments))
+  const unassigned = MAP_PARTNERS.filter(p => !assignedPartners.has(p.id))
+  const allAssigned = Object.keys(assignments).length === MAP_BUILDINGS.length
+  const correctCount = Object.entries(assignments).filter(([buildingId, partnerId]) => {
+    const partner = MAP_PARTNERS.find(p => p.id === partnerId)
+    return partner?.bestBuilding === buildingId
+  }).length
+
+  return (
+    <div>
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 text-white">
+        <p className="text-xs font-bold uppercase tracking-wider text-pink-400 mb-2">Millbrook College Campus</p>
+        <p className="text-sm text-gray-300 leading-relaxed">
+          Six buildings. Six community partners. Each partner fits best in one building — but not always the obvious one. Match them based on what the partner actually needs, what the building actually has, and what creates the strongest transformation model.
+        </p>
+      </div>
+
+      {/* Unassigned partners */}
+      {!revealed && unassigned.length > 0 && (
+        <div className="mb-6">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Partners to place</p>
+          <div className="flex flex-wrap gap-2">
+            {unassigned.map(p => (
+              <button key={p.id}
+                      onClick={() => setDragging(dragging === p.id ? null : p.id)}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-all ${
+                        dragging === p.id ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-200 bg-white text-gray-600 hover:border-pink-300'
+                      }`}>
+                <span className="mr-1">{p.icon}</span> {p.name}
+              </button>
+            ))}
+          </div>
+          {dragging && (
+            <p className="text-xs text-pink-500 mt-2">Now click a building to place <strong>{MAP_PARTNERS.find(p => p.id === dragging)?.name}</strong></p>
+          )}
+        </div>
+      )}
+
+      {/* Buildings */}
+      <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        {MAP_BUILDINGS.map(b => {
+          const assignedPartnerId = assignments[b.id]
+          const assignedPartner = MAP_PARTNERS.find(p => p.id === assignedPartnerId)
+          const isCorrect = assignedPartner?.bestBuilding === b.id
+          return (
+            <div
+              key={b.id}
+              onClick={() => {
+                if (revealed) return
+                if (dragging) { assign(dragging, b.id); setDragging(null) }
+              }}
+              className={`p-4 rounded-xl border-2 transition-all ${
+                revealed
+                  ? assignedPartner
+                    ? isCorrect ? 'border-green-400 bg-green-50' : 'border-yellow-300 bg-yellow-50'
+                    : 'border-gray-200 bg-gray-50'
+                  : dragging
+                    ? 'border-pink-300 bg-pink-50 cursor-pointer hover:border-pink-500'
+                    : 'border-gray-200 bg-white'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-xl">{b.icon}</span>
+                <div className="flex-1">
+                  <p className="font-bold text-sm" style={{ color: '#0C1F3F' }}>{b.name}</p>
+                  <p className="text-[10px] text-gray-400">{b.desc}</p>
+                  {assignedPartner && (
+                    <div className={`mt-2 pt-2 border-t ${revealed ? isCorrect ? 'border-green-200' : 'border-yellow-200' : 'border-pink-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold" style={{ color: '#EC4899' }}>
+                          {assignedPartner.icon} {assignedPartner.name}
+                        </p>
+                        {!revealed && (
+                          <button onClick={(e) => { e.stopPropagation(); const next = { ...assignments }; delete next[b.id]; setAssignments(next) }}
+                                  className="text-[10px] text-gray-400 hover:text-red-500">remove</button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">{assignedPartner.desc}</p>
+                      {revealed && (
+                        <div className="mt-2">
+                          <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCorrect ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {isCorrect ? 'Best Match' : `Better fit: ${MAP_BUILDINGS.find(bb => bb.id === assignedPartner.bestBuilding)?.name}`}
+                          </p>
+                          <p className="text-xs text-gray-600 leading-relaxed">{assignedPartner.why}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {allAssigned && !revealed && (
+        <button onClick={() => setRevealed(true)}
+                className="w-full py-3 rounded-xl text-white font-bold text-sm"
+                style={{ background: '#EC4899' }}>
+          Lock In — See How My Campus Works
+        </button>
+      )}
+
+      {revealed && (
+        <div className="bg-gray-900 rounded-2xl p-6 text-white">
+          <p className="text-xs font-bold uppercase tracking-wider text-pink-400 mb-2">Your Community Campus</p>
+          <p className="text-3xl font-light text-center mb-1" style={{ color: correctCount >= 5 ? '#00A8A8' : correctCount >= 3 ? '#D97706' : '#DC2626' }}>
+            {correctCount}/{MAP_BUILDINGS.length}
+          </p>
+          <p className="text-xs text-gray-500 text-center mb-4">optimal matches</p>
+          <p className="text-sm text-gray-400 leading-relaxed text-center max-w-md mx-auto mb-4">
+            {correctCount >= 5
+              ? 'You built a campus that works as a system — each partner reinforces the others. The hospital trains workers in the science building, the school district uses the library after 3pm, seniors fill the gym in the morning, trainees sleep in the dorms, and the whole community gathers in the dining hall. That\'s transformation.'
+              : correctCount >= 3
+                ? 'Good instincts, but some matches could be stronger. The key is thinking about what each partner physically needs — not just what sounds logical. Read the feedback and notice how the best matches use existing infrastructure in unexpected ways.'
+                : 'Some of these partnerships are in the wrong buildings, which means they won\'t work as well as they could. In campus transformation, the physical match matters as much as the programmatic match. A partner in the wrong space creates friction instead of synergy.'}
+          </p>
+          <div className="text-center">
+            <button onClick={() => { setAssignments({}); setRevealed(false); setDragging(null) }}
+                    className="px-4 py-2 rounded-lg text-sm font-bold bg-pink-600 text-white">
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── MAIN GAME HUB ─────────────────────────────────────────────
 
 export default function SkillsGame() {
@@ -639,6 +1005,8 @@ export default function SkillsGame() {
         {activeMode === 'said' && <SaidMode />}
         {activeMode === 'missing' && <MissingMode />}
         {activeMode === 'board' && <BoardMode />}
+        {activeMode === 'build' && <BuildMode />}
+        {activeMode === 'partners' && <PartnersMode />}
       </div>
     )
   }
