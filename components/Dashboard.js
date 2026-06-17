@@ -16,11 +16,13 @@ import Timeline from './Timeline'
 import BulletinBoard from './BulletinBoard'
 import SuggestEdit from './SuggestEdit'
 import NewsTicker from './NewsTicker'
+import SkillsGame from './SkillsGame'
 
 const TABS = [
   { id: 'dashboard', label: 'Home', icon: '🏠' },
   { id: 'timeline', label: 'Timeline', icon: '🗓️' },
   { id: 'tasks', label: 'Tasks', icon: '📋' },
+  { id: 'training', label: 'Training', icon: '🎯' },
   { id: 'team', label: 'Team', icon: '👥' },
   { id: 'calendar', label: 'Calendar', icon: '📅' },
   { id: 'discussions', label: 'Discuss', icon: '💬' },
@@ -326,6 +328,7 @@ export default function Dashboard() {
             </div>
           )}
 
+          {tab === 'training' && <SkillsGame />}
           {tab === 'timeline' && <Timeline />}
           {tab === 'tasks' && <TaskBoard />}
           {tab === 'team' && <TeamDirectory />}
